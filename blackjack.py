@@ -47,16 +47,13 @@ def jogar_rodada(baralho):
 
 # Loop principal do jogo
 saldo = 100
+
 while saldo > 0:
     print(f'Seu saldo é de {saldo} fichas.')
     aposta = int(input('Quanto você quer apostar? '))
     if aposta > saldo:
         print('Aposta inválida! Você não tem fichas suficientes.')
-
-    if aposta <= 0:
-        resposta = input('Deseja parar de jogar? (s/n)')
-    if resposta.lower() == 's':
-        break
+     
 
         continue
     resultado = jogar_rodada(baralho)
