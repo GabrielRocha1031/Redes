@@ -52,8 +52,6 @@ server_socket.listen()
 
 
 
-
-
 # Função para jogar uma rodada
 def jogar_rodada(Jogador, baralho):
     print('teste')
@@ -67,13 +65,14 @@ def jogar_rodada(Jogador, baralho):
         message = (f"Mão do jogador: {Jogador.cartas}")
         if valor_mao(Jogador.cartas) > 21:
             print('Você estourou! Fim de jogo.')
-            return -1
+            Jogador.jogando = 0
+            Jogador.comprando = 0
         else:
             Jogador.comprando = 1
-            return 1
+            Jogador.jogando = 1
     else:
         Jogador.comprando = 0
-        return 0
+        Jogador.jogando = 1
              
 
 
@@ -94,23 +93,25 @@ while nJogadores != 0:
 # Loop principal do jogo
 # Num vai indicar se ainda ha jogadores que podem comprar
 while num != 0:
+    print(f"{num}")
     # Percorre os jogadores ativos na partida
     for Jogador in Jogadores:
-        if Jogador.comprando == 1 and Jogador.jogando != 0:
-            # Chama função de comprar carta
-            resultado = jogar_rodada(Jogador, baralho)
-            if resultado == -1:
-                num -= 1
-                Jogador.jogando = 0
-            elif resultado == 0:
-                num -= 1
+        # Chama função de comprar carta
+        jogar_rodada(Jogador, baralho)
+        if Jogador.comprando == 0:
+            num -= 1
+
 print('Vez do crupie')
 
 
 
 
 while valor_mao(mao_crupie) < 17:
+    print('Vez do crupie2')
     mao_crupie.append(baralho.pop())
+    for Jogador in Jogadores:
+        message = (f"Mão do crupie: {mao_crupie}")
+        Jogador.sock.send(message.encode())
 #if valor_mao(mao_crupie) > 21:
 #    print('Crupiê estourou! Você ganhou!')
 #elif valor_mao(mao_jogador) > valor_mao(mao_crupie):
