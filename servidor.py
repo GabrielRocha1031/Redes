@@ -2,18 +2,21 @@ import socket
 import threading
 import random
 
+# Objeto jogador
 class Jogador:
-    def __init__(self, sock, addr, num, fichas, cartas, comprando, jogando):
+    def __init__(self, sock, addr, num, saldo, apostado, cartas, soma_das_cartas, comprando, jogando, Jblackjack):
         self.sock = sock
         self.addr = addr
         self.num = num
-        self.fichas = fichas
+        self.saldo = saldo
+        self.apostado = apostado
         self.cartas = cartas
+        self.soma_das_cartas = soma_das_cartas
         self.comprando = comprando
         self.jogando = jogando
 
     def exibir_informacoes(self):
-        print(f"fichas: {self.fichas}")
+        print(f"saldo: {self.saldo}")
         print(f"cartas: {self.cartas}")
 
 
@@ -22,14 +25,8 @@ valor_cartas = {'A': 11, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
 baralho = list(valor_cartas.keys()) * 4
 random.shuffle(baralho)
 
-# Função para calcular o valor de uma mão
-def valor_mao(mao):
-    valor = sum([valor_cartas[carta] for carta in mao])
-    if valor > 21 and 'A' in mao:
-        valor -= 10
-    return valor
-
-
+# Variaveis do jogo
+saldo_do_jogo = 0
 Jogadores = []
 mao_crupie = [baralho.pop(), baralho.pop()]
 
@@ -49,24 +46,70 @@ server_socket.bind((HOST, PORT))
 # Aguarda as conexões de clientes
 server_socket.listen()
 
+# Função para calcular o valor de uma mão
+def valor_mao(mao):
+    valor = sum([valor_cartas[carta] for carta in mao])
+    if valor > 21 and 'A' in mao:
+        valor -= 10
+    return valor
+
+# Informa que jogador fez 21
+def blackjack(Jogador):
+
+    message = (f"Mão do jogador: {Jogador.cartas}\nParabéns!!! Você fez 21 e ganhou!")
+    Jogador.sock.send(message.encode())
+
+# Futura funcao que define o ganhador
+#def ganhador(Jogadores):
+#    for Jogador in Jogadores:
+
+    #para fazer comparacoes e premiacoes deve-se ter: soma das cartas de cada jogador e valor apostado
+
+    #if valor_mao(mao_crupie) > 21:
+    #    message = ("Crupiê estourou! Você ganhou!")
+    #    Jogador.sock.send(message.encode())
+    #
+    #elif valor_mao(mao_jogador) > valor_mao(mao_crupie):
+    #    message = ("Você ganhou!")
+    #    Jogador.sock.send(message.encode())
+    #elif valor_mao(mao_jogador) == valor_mao(mao_crupie):
+    #    print('Empate!')
+    #else:
+    #    print('Você perdeu!')
+
 
 
 
 # Função para jogar uma rodada
 def jogar_rodada(Jogador, baralho):
-    print('teste')
+
+
+    Jogador.soma_das_cartas = valor_mao(Jogador.cartas)
+    print(f"soma das cartas: {Jogador.soma_das_cartas} Apostado: {Jogador.apostado}")
+
+    #verifica blackjack
+    if Jogador.soma_das_cartas == 21:
+        blackjack(Jogador)
+
+    Jogador.soma_das_cartas = valor_mao(Jogador.cartas)
     # Envia uma mensagem de resposta para o cliente
-    message = (f"Mão do jogador: {Jogador.cartas}\n Mão do crupie: [{mao_crupie[0]}, ?] \n Deseja comprar mais cartas? (s/n):")
+    message = (f"Mão do jogador: {Jogador.cartas}\nMão do crupie: [{mao_crupie[0]}, ?] \nDeseja comprar mais cartas? (s/n):")
     Jogador.sock.send(message.encode())
     # Recebe mensagem com a resposta
     opcao = Jogador.sock.recv(1024)
     print(f"{opcao.decode()}")
     # horas foram perdidas graças a este .decode()
+
     if opcao.decode() == 's':
         Jogador.cartas.append(baralho.pop())
-        if valor_mao(Jogador.cartas) > 21:
-            message = ("Você estorou :c que pena...")
+        Jogador.soma_das_cartas = valor_mao(Jogador.cartas)
+        if valor_mao(Jogador.cartas) == 21:
+             blackjack(Jogador)
+        elif valor_mao(Jogador.cartas) > 21:
+            message = (f"Mão do jogador: {Jogador.cartas}\nVocê estorou :c que pena...")
             Jogador.sock.send(message.encode())
+            resposta = Jogador.sock.recv(1024)
+            print(f"{resposta.decode()}")
             Jogador.jogando = 0
             Jogador.comprando = 0
         else:
@@ -81,8 +124,6 @@ def jogar_rodada(Jogador, baralho):
         Jogador.sock.send(message.encode())
         Jogador.comprando = 0
         Jogador.jogando = 1
-             
-
 
 
 # Loop principal do servidor
@@ -94,13 +135,13 @@ while nJogadores != 0:
     client_socket, client_address = server_socket.accept()
     print(f"Conexão estabelecida com {client_address}")
     num += 1
-    Jogadores.append(Jogador(client_socket, client_address, num, 100, [baralho.pop(), baralho.pop()], 1, 1))
+    #######sock, addr, num, saldo, apostado, cartas, soma_das_cartas, comprando, jogando, Jblackjack#######
+    Jogadores.append(Jogador(client_socket, client_address, num, 100, 0, [baralho.pop(), baralho.pop()],0,  1, 1, 0))
     nJogadores-=1
 
 
 # Loop principal do jogo
 # Num vai indicar se ainda ha jogadores que podem comprar
-
 while num != 0:
     # Percorre os jogadores ativos na partida
     for Jogador in Jogadores:
@@ -114,7 +155,6 @@ while num != 0:
 print('Vez do crupie')
 
 
-
 #Crupie termina de comprar suas cartas seguindo as regras pre definidas
 while valor_mao(mao_crupie) < 17:
     print('Vez do crupie2')
@@ -124,12 +164,8 @@ for Jogador in Jogadores:
     message = (f"Mão do crupie: {mao_crupie}")
     Jogador.sock.send(message.encode())
 
-#if valor_mao(mao_crupie) > 21:
-#    print('Crupiê estourou! Você ganhou!')
-#elif valor_mao(mao_jogador) > valor_mao(mao_crupie):
-#    print('Você ganhou!')
-#elif valor_mao(mao_jogador) == valor_mao(mao_crupie):
-#    print('Empate!')
-#else:
-#    print('Você perdeu!')
+# Chama a futura funcao que define o ganhador
+#ganhador(Jogadores)
 
+
+    
