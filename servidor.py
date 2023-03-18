@@ -61,17 +61,22 @@ def jogar_rodada(Jogador, baralho):
     # Recebe mensagem com a resposta
     opcao = Jogador.sock.recv(1024)
     print(f"{opcao.decode()}")
+    # horas foram perdidas graças a este .decode()
     if opcao.decode() == 's':
         Jogador.cartas.append(baralho.pop())
-        message = (f"Mão do jogador: {Jogador.cartas}")
         if valor_mao(Jogador.cartas) > 21:
-            print('Você estourou! Fim de jogo.')
+            message = ("Você estorou :c que pena...")
+            Jogador.sock.send(message.encode())
             Jogador.jogando = 0
             Jogador.comprando = 0
         else:
+            message = (f"Mão do jogador: {Jogador.cartas}\nAguarde a proxima rodada...")
+            Jogador.sock.send(message.encode())
             Jogador.comprando = 1
             Jogador.jogando = 1
     else:
+        message = ("Você parou, aguarde enquanto os outro jogam...")
+        Jogador.sock.send(message.encode())
         Jogador.comprando = 0
         Jogador.jogando = 1
              
@@ -95,13 +100,13 @@ while nJogadores != 0:
 # Num vai indicar se ainda ha jogadores que podem comprar
 
 while True:
-    
     # Percorre os jogadores ativos na partida
     for Jogador in Jogadores:
         # Chama função de comprar carta
-        jogar_rodada(Jogador, baralho)
-        print(f"{num}")
-        if Jogador.comprando == 0:
+        if Jogador.comprando == 1:
+            jogar_rodada(Jogador, baralho)
+            print(f"{num}")
+        else:
             num -= 1
     if num == 0:
         break    
