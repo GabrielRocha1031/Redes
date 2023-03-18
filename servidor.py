@@ -164,6 +164,8 @@ for Jogador in Jogadores:
     message = (f"Mão do crupie: {mao_crupie}")
     Jogador.sock.send(message.encode())
 
+#-----------Programa ta acabando aqui----------------
+
 # Chama a futura funcao que define o ganhador
 #ganhador(Jogadores)
 
