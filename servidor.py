@@ -60,7 +60,8 @@ def jogar_rodada(Jogador, baralho):
     Jogador.sock.send(message.encode())
     # Recebe mensagem com a resposta
     opcao = Jogador.sock.recv(1024)
-    if opcao.lower() == 's':
+    print(f"{opcao.decode()}")
+    if opcao.decode() == 's':
         Jogador.cartas.append(baralho.pop())
         message = (f"Mão do jogador: {Jogador.cartas}")
         if valor_mao(Jogador.cartas) > 21:
@@ -92,14 +93,18 @@ while nJogadores != 0:
 
 # Loop principal do jogo
 # Num vai indicar se ainda ha jogadores que podem comprar
-while num != 0:
-    print(f"{num}")
+
+while True:
+    
     # Percorre os jogadores ativos na partida
     for Jogador in Jogadores:
         # Chama função de comprar carta
         jogar_rodada(Jogador, baralho)
+        print(f"{num}")
         if Jogador.comprando == 0:
             num -= 1
+    if num == 0:
+        break    
 
 print('Vez do crupie')
 
@@ -109,9 +114,7 @@ print('Vez do crupie')
 while valor_mao(mao_crupie) < 17:
     print('Vez do crupie2')
     mao_crupie.append(baralho.pop())
-    for Jogador in Jogadores:
-        message = (f"Mão do crupie: {mao_crupie}")
-        Jogador.sock.send(message.encode())
+    
 #if valor_mao(mao_crupie) > 21:
 #    print('Crupiê estourou! Você ganhou!')
 #elif valor_mao(mao_jogador) > valor_mao(mao_crupie):
@@ -120,3 +123,7 @@ while valor_mao(mao_crupie) < 17:
 #    print('Empate!')
 #else:
 #    print('Você perdeu!')
+
+for Jogador in Jogadores:
+    message = (f"Mão do crupie: {mao_crupie}")
+    Jogador.sock.send(message.encode())
