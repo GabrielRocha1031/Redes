@@ -56,28 +56,12 @@ def valor_mao(mao):
 # Informa que jogador fez 21
 def blackjack(Jogador):
 
-    message = (f"Mão do jogador: {Jogador.cartas}\nParabéns!!! Você fez 21 e ganhou!")
+    message = (f"Mão do jogador: {Jogador.cartas}\nParabéns!!! Você fez 21 e ganhou! Aguarde os jogadores pararem de jogar... ok? (responder)")
     Jogador.sock.send(message.encode())
-
-# Futura funcao que define o ganhador
-#def ganhador(Jogadores):
-#    for Jogador in Jogadores:
-
-    #para fazer comparacoes e premiacoes deve-se ter: soma das cartas de cada jogador e valor apostado
-
-    #if valor_mao(mao_crupie) > 21:
-    #    message = ("Crupiê estourou! Você ganhou!")
-    #    Jogador.sock.send(message.encode())
-    #
-    #elif valor_mao(mao_jogador) > valor_mao(mao_crupie):
-    #    message = ("Você ganhou!")
-    #    Jogador.sock.send(message.encode())
-    #elif valor_mao(mao_jogador) == valor_mao(mao_crupie):
-    #    print('Empate!')
-    #else:
-    #    print('Você perdeu!')
-
-
+    resposta = Jogador.sock.recv(1024)
+    print(f"{resposta.decode()}")
+    Jogador.jogando = 0
+    Jogador.comprando = 0
 
 
 # Função para jogar uma rodada
@@ -93,20 +77,19 @@ def jogar_rodada(Jogador, baralho):
 
     Jogador.soma_das_cartas = valor_mao(Jogador.cartas)
     # Envia uma mensagem de resposta para o cliente
-    message = (f"Mão do jogador: {Jogador.cartas}\nMão do crupie: [{mao_crupie[0]}, ?] \nDeseja comprar mais cartas? (s/n):")
+    message = (f"Mão do jogador: {Jogador.cartas}\nMão do crupie: [{mao_crupie[0]}, ?] \nO que deseja fzer? (comprar/parar):")
     Jogador.sock.send(message.encode())
     # Recebe mensagem com a resposta
     opcao = Jogador.sock.recv(1024)
     print(f"{opcao.decode()}")
-    # horas foram perdidas graças a este .decode()
 
-    if opcao.decode() == 's':
+    if opcao.decode() == 'comprar':
         Jogador.cartas.append(baralho.pop())
         Jogador.soma_das_cartas = valor_mao(Jogador.cartas)
         if valor_mao(Jogador.cartas) == 21:
              blackjack(Jogador)
         elif valor_mao(Jogador.cartas) > 21:
-            message = (f"Mão do jogador: {Jogador.cartas}\nVocê estorou :c que pena...")
+            message = (f"Mão do jogador: {Jogador.cartas}\nVocê estorou :c que pena, aguarde os outros jogadores ... ok? (responder)")
             Jogador.sock.send(message.encode())
             resposta = Jogador.sock.recv(1024)
             print(f"{resposta.decode()}")
@@ -120,8 +103,10 @@ def jogar_rodada(Jogador, baralho):
             Jogador.comprando = 1
             Jogador.jogando = 1
     else:
-        message = ("Você parou, aguarde enquanto os outro jogam...")
+        message = ("Você parou, aguarde enquanto os outro jogam... ok? (responder)")
         Jogador.sock.send(message.encode())
+        resposta = Jogador.sock.recv(1024)
+        print(f"{resposta.decode()}")
         Jogador.comprando = 0
         Jogador.jogando = 1
 
@@ -152,22 +137,54 @@ while num != 0:
             if Jogador.comprando == 0:
                 num -= 1
 
-print('Vez do crupie')
+print('Vez do crupie:')
+print(f"\nMão do crupie: {mao_crupie}") 
+print(f"  Pontuação: {valor_mao(mao_crupie)}")
 
 
 #Crupie termina de comprar suas cartas seguindo as regras pre definidas
 while valor_mao(mao_crupie) < 17:
-    print('Vez do crupie2')
+    print('Vez do crupie:')
     mao_crupie.append(baralho.pop())
+    print(f"\nMão do crupie: {mao_crupie}") 
+    print(f"  Pontuação: {valor_mao(mao_crupie)}")
+
+message = (f"\nMão do crupie: {mao_crupie}") + (f"  Pontuação: {valor_mao(mao_crupie)}")
+for Jogador in Jogadores:
+    message = message + (f"\nMão do jogador {Jogador.num}") + (f": {Jogador.cartas}") + (f"  Pontuação: {valor_mao(Jogador.cartas)}")
+
+resultados =[]
+for Jogador in Jogadores:
+    resultados.append(valor_mao(Jogador.cartas))
+
+limite = 21
+maior = 0
+for numero in resultados:
+    if numero <= limite and numero > maior:
+        maior = numero
+
+if valor_mao(mao_crupie) > maior and valor_mao(mao_crupie) < 21:
+    message = message + ("\nCRUPIE GANHOU!!!")
+else:
+    for Jogador in Jogadores:
+        if valor_mao(Jogador.cartas) == maior:
+            message = message + (f"\nJOGADOR {Jogador.num} GANHOU!!!")
+
+
+message = message + ("\n\nDigite OK para sair do jogo:")
 
 for Jogador in Jogadores:
-    message = (f"Mão do crupie: {mao_crupie}")
     Jogador.sock.send(message.encode())
+    resposta = Jogador.sock.recv(1024)
+    print(f"{resposta.decode()}")
+
+for Jogador in Jogadores: 
+    message = "0"
+    Jogador.sock.send(message.encode())
+
+
 
 #-----------Programa ta acabando aqui----------------
 
 # Chama a futura funcao que define o ganhador
 #ganhador(Jogadores)
-
-
-    
